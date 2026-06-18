@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>❤️ Taha & Betül Harf Oyunu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Yüzen Kalpler -->
+  <div class="hearts-background" id="heartsContainer"></div>
+
+  <!-- Başlangıç Ekranı -->
+  <div id="start-screen">
+    <h1>💕 Taha & Betül Harf Oyunu 💕</h1>
+    <div class="story-content">
+      <p>Bir zamanlar, Taha ve Betül adında iki genç vardı. Onların hikayesi, birbirlerine olan sevgi ve bağlılıklarının küçük ama anlamlı bir oyunla taçlandığı bir masal gibiydi.</p>
+      <p>Bir gün, Taha ve Betül kendi aralarında özel bir oyun yaratmaya karar verdiler: <strong>Harf Oyunu</strong>. Bu oyun, sadece bir eğlence aracı değil, aynı zamanda kalplerini birbirine daha da yakınlaştıran bir bağdı.</p>
+      
+      <h3 style="margin-top: 20px;">🎯 Oyunun Kuralları:</h3>
+      <ul>
+        <li>Oyun başladığında sırayla harfler verilir</li>
+        <li>Her oyuncu 10 saniye içinde harf almalıdır</li>
+        <li>Harf aldıktan sonra 3 saniye içinde diğer oyuncuya geçilir</li>
+        <li>Harf alan oyuncu puan kazanır</li>
+        <li>⭐ Bonus harfler 2x puan kazandırır!</li>
+        <li>🔥 Art arda kazanan combo yapar!</li>
+        <li>Oyun, tüm harfler bitince sona erer</li>
+      </ul>
+      
+      <p style="margin-top: 20px; font-weight: bold; font-size: 1.2em;">Aşkla kalın, sevgiyle kalın. ❤️</p>
+    </div>
+    <button class="btn" onclick="startGame()">🎮 Oyuna Başla</button>
+  </div>
+
+  <!-- Oyun Alanı -->
+  <div id="game-area">
+    <div class="game-header">
+      <h1>❤️ Taha & Betül Harf Oyunu ❤️</h1>
+      <div class="game-info">
+        <div class="info-item">
+          <span class="info-label">⏱️ Oyun Süresi:</span>
+          <span class="info-value" id="game-time">00:00</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">📝 Kalan Harf:</span>
+          <span class="info-value" id="remaining-letters">29</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">🎯 Durum:</span>
+          <span class="info-value" id="game-status">Oyun Başlıyor...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skor Kartı -->
+    <div class="score-card">
+      <div class="player-score">
+        <h3>Taha</h3>
+        <div class="score-value" id="taha-score">0</div>
+        <div id="taha-combo" style="color: #ffd700; font-size: 1.2em; min-height: 25px;"></div>
+      </div>
+      <div class="vs-divider">💝</div>
+      <div class="player-score">
+        <h3>Betül</h3>
+        <div class="score-value" id="betul-score">0</div>
+        <div id="betul-combo" style="color: #ffd700; font-size: 1.2em; min-height: 25px;"></div>
+      </div>
+    </div>
+
+    <!-- Oyuncu Kutuları -->
+    <div class="players-container">
+      <div class="player-box" id="taha-box">
+        <div class="player-name">💙 Taha 💙</div>
+        <div class="letter-display" id="taha-letter">?</div>
+        <div class="timer-info">
+          <span id="taha-timer-text">Bekleniyor...</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="taha-timer"></div>
+        </div>
+        <button class="btn" id="taha-button" onclick="giveLetter('taha')">
+          ✨ Harf Al
+        </button>
+      </div>
+
+      <div class="player-box" id="betul-box">
+        <div class="player-name">💗 Betül 💗</div>
+        <div class="letter-display" id="betul-letter">?</div>
+        <div class="timer-info">
+          <span id="betul-timer-text">Bekleniyor...</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress" id="betul-timer"></div>
+        </div>
+        <button class="btn" id="betul-button" onclick="giveLetter('betul')">
+          ✨ Harf Al
+        </button>
+      </div>
+    </div>
+
+    <!-- Sevgi Mesajı -->
+    <div class="love-quote-box">
+      <div class="heart-icon">💖</div>
+      <div class="love-quote-text" id="love-quote">Aşk başlıyor...</div>
+    </div>
+
+    <!-- Yeniden Başlat Butonu -->
+    <div style="text-align: center; margin-top: 30px;">
+      <button class="btn" onclick="restartGame()">🔄 Yeni Oyun</button>
+    </div>
+  </div>
+
+  <!-- Combo Göstergesi -->
+  <div class="combo-indicator" id="comboIndicator"></div>
+
+  <script>
+    const alphabet = ['A','B','C','Ç','D','E','F','G','Ğ','H','I','İ','J','K','L','M','N','O','Ö','P','R','S','Ş','T','U','Ü','V','Y','Z'];
+    let shuffledLetters = [];
+    let currentIndex = 0;
+    let tahaScore = 0;
+    let betulScore = 0;
+    let tahaCombo = 0;
+    let betulCombo = 0;
+    let timers = {};
+    let currentPlayer = 'taha';
+    let specialLetters = [];
+    let gameStartTime = null;
+    let gameTimeInterval = null;
+    let isWaitingForNextTurn = false;
+
+    const quotes = [
+      "Aşk bir gül gibidir, büyürken dikenleriyle sınar.",
+      "Seninle geçen her saniye kalbimin en güzel atışı.",
+      "Kalbim seninle tamamlandı.",
+      "Aşkla bakınca her şey güzelleşir.",
+      "Sen yanımdayken dünya daha güzel.",
+      "Bir bakışınla bin mutluluk yazılır içime.",
+      "Senin adınla başlar her günüm.",
+      "Aşk; seni düşünürken gülümsemek demek.",
+      "Gözlerinde kaybolmak istiyorum.",
+      "Sen benim en güzel tesadüfümsün.",
+      "Kalbimde senin adını taşıyan bir melodi çalıyor.",
+      "Sensizlik rüzgâr, senliğim bahardır.",
+      "Seni çok seviyorum aşkım.",
+      "Bir gülüşünle karanlığım aydınlanıyor.",
+      "Seninle susmak bile huzur dolu.",
+      "Sana bakmak, zamanın durduğu an demek.",
+      "Gönlümde bir yer var, sadece sana ait.",
+      "Sen geldin, eksik olan her şey tamam oldu.",
+      "Yüreğim seninle aynı ritmi buldu.",
+      "Seninle hayal kurmak bile hayatı yaşanır kılıyor.",
+      "Bir sen varsın kalbimde, bir de sana dair dualarım."
+    ];
+
+    // Yüzen kalpler oluştur
+    function createFloatingHearts() {
+      const container = document.getElementById('heartsContainer');
+      const hearts = ['❤️', '💕', '💖', '💗', '💝', '💞','💖','💘','💌','💝','💓','❣️'];
+      
+      setInterval(() => {
+        const heart = document.createElement('div');
+        heart.className = 'floating-heart';
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        heart.style.left = Math.random() * 100 + '%';
+        heart.style.animationDuration = (Math.random() * 4 + 6) + 's';
+        heart.style.fontSize = (Math.random() * 20 + 20) + 'px';
+        container.appendChild(heart);
+        
+        setTimeout(() => heart.remove(), 10000);
+      }, 2000);
+    }
+
+    createFloatingHearts();
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function startGame() {
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-area').style.display = 'block';
+      initGame();
+    }
+
+    function initGame() {
+      shuffledLetters = shuffle(alphabet.slice());
+      currentIndex = 0;
+      tahaScore = 0;
+      betulScore = 0;
+      tahaCombo = 0;
+      betulCombo = 0;
+      currentPlayer = 'taha';
+      isWaitingForNextTurn = false;
+      
+      // Oyun süresini başlat
+      gameStartTime = Date.now();
+      if (gameTimeInterval) clearInterval(gameTimeInterval);
+      gameTimeInterval = setInterval(updateGameTime, 1000);
+      
+      // Her 5 harfte bir bonus harf
+      specialLetters = [];
+      for (let i = 4; i < shuffledLetters.length; i += 5) {
+        specialLetters.push(i);
+      }
+      
+      updateScores();
+      updateRemainingLetters();
+      resetLetters();
+      updateQuote();
+      updateGameStatus('Oyun başladı! Taha\'nın sırası');
+      nextTurn();
+    }
+
+    function updateGameTime() {
+      if (!gameStartTime) return;
+      const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      document.getElementById('game-time').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function updateRemainingLetters() {
+      const remaining = shuffledLetters.length - currentIndex;
+      document.getElementById('remaining-letters').textContent = remaining;
+    }
+
+    function updateGameStatus(status) {
+      document.getElementById('game-status').textContent = status;
+    }
+
+    function nextTurn() {
+      if (currentIndex >= shuffledLetters.length) {
+        endGame();
+        return;
+      }
+      
+      clearTimers();
+      isWaitingForNextTurn = false;
+      enablePlayer(currentPlayer);
+    }
+
+    function enablePlayer(player) {
+      const tahaBox = document.getElementById('taha-box');
+      const betulBox = document.getElementById('betul-box');
+      const tahaBtn = document.getElementById('taha-button');
+      const betulBtn = document.getElementById('betul-button');
+      
+      if (player === 'taha') {
+        tahaBox.classList.add('active');
+        betulBox.classList.remove('active');
+        tahaBtn.disabled = false;
+        betulBtn.disabled = true;
+        updateGameStatus('Taha\'nın sırası - Harf al!');
+        startTimer('taha', 10, 'Kalan süre: ');
+      } else {
+        betulBox.classList.add('active');
+        tahaBox.classList.remove('active');
+        betulBtn.disabled = false;
+        tahaBtn.disabled = true;
+        updateGameStatus('Betül\'ün sırası - Harf al!');
+        startTimer('betul', 10, 'Kalan süre: ');
+      }
+    }
+
+    function startTimer(player, duration, labelPrefix = '') {
+      let timeLeft = duration;
+      const progressBar = document.getElementById(player + '-timer');
+      const timerText = document.getElementById(player + '-timer-text');
+      progressBar.style.width = '100%';
+      timerText.textContent = labelPrefix + timeLeft + ' saniye';
+
+      timers[player] = setInterval(() => {
+        timeLeft--;
+        progressBar.style.width = ((timeLeft / duration) * 100) + '%';
+        timerText.textContent = labelPrefix + timeLeft + ' saniye';
+
+        if (timeLeft <= 0) {
+          clearInterval(timers[player]);
+          timerText.textContent = 'Süre doldu!';
+          
+          if (!isWaitingForNextTurn) {
+            // Süre doldu, puan kaybı
+            if (player === 'taha') {
+              tahaCombo = 0;
+              updateGameStatus('Taha süresi doldu! Betül\'ün sırası');
+            } else {
+              betulCombo = 0;
+              updateGameStatus('Betül süresi doldu! Taha\'nın sırası');
+            }
+            updateCombos();
+            currentPlayer = player === 'taha' ? 'betul' : 'taha';
+            
+            setTimeout(() => {
+              nextTurn();
+            }, 1000);
+          }
+        }
+      }, 1000);
+    }
+
+    function clearTimers() {
+      clearInterval(timers['taha']);
+      clearInterval(timers['betul']);
+      document.getElementById('taha-timer-text').textContent = 'Bekleniyor...';
+      document.getElementById('betul-timer-text').textContent = 'Bekleniyor...';
+    }
+
+    function giveLetter(player) {
+      if (currentIndex >= shuffledLetters.length || isWaitingForNextTurn) return;
+      
+      clearTimers();
+      isWaitingForNextTurn = true;
+      
+      const letter = shuffledLetters[currentIndex];
+      const isSpecial = specialLetters.includes(currentIndex);
+      const points = isSpecial ? 2 : 1;
+      
+      const letterDiv = document.getElementById(player + '-letter');
+      const otherLetterDiv = document.getElementById(player === 'taha' ? 'betul-letter' : 'taha-letter');
+      const timerText = document.getElementById(player + '-timer-text');
+      
+      // Animasyon ekle
+      letterDiv.classList.add('revealed');
+      setTimeout(() => letterDiv.classList.remove('revealed'), 600);
+      
+      if (isSpecial) {
+        letterDiv.classList.add('special-letter');
+        setTimeout(() => letterDiv.classList.remove('special-letter'), 2000);
+      }
+      
+      letterDiv.textContent = letter;
+      otherLetterDiv.textContent = '?';
+      
+      // Puan ve combo güncelle
+      if (player === 'taha') {
+        tahaScore += points;
+        tahaCombo++;
+        betulCombo = 0;
+        
+        if (tahaCombo >= 3) {
+          showCombo('🔥 TAHA COMBO x' + tahaCombo + ' 🔥');
+        }
+        updateGameStatus('Taha harf aldı! +' + points + ' puan');
+      } else {
+        betulScore += points;
+        betulCombo++;
+        tahaCombo = 0;
+        
+        if (betulCombo >= 3) {
+          showCombo('🔥 BETÜL COMBO x' + betulCombo + ' 🔥');
+        }
+        updateGameStatus('Betül harf aldı! +' + points + ' puan');
+      }
+      
+      if (isSpecial) {
+        showCombo('⭐ BONUS HARF! +' + points + ' PUAN ⭐');
+      }
+      
+      updateScores();
+      updateCombos();
+      updateQuote();
+      currentIndex++;
+      updateRemainingLetters();
+      
+      // 3 saniye bekleyip bir sonraki tura geç
+      timerText.textContent = 'Harika! Sıra değişiyor...';
+      const otherPlayer = player === 'taha' ? 'betul' : 'taha';
+      currentPlayer = otherPlayer;
+      
+      // 3 saniye geri sayım göster
+      startTimer(player, 3, 'Sonraki tur: ');
+      
+      setTimeout(() => {
+        resetLetters();
+        nextTurn();
+      }, 3000);
+    }
+
+    function showCombo(text) {
+      const comboDiv = document.getElementById('comboIndicator');
+      comboDiv.textContent = text;
+      comboDiv.classList.remove('show');
+      setTimeout(() => comboDiv.classList.add('show'), 10);
+    }
+
+    function updateScores() {
+      document.getElementById('taha-score').textContent = tahaScore;
+      document.getElementById('betul-score').textContent = betulScore;
+    }
+
+    function updateCombos() {
+      const tahaComboDiv = document.getElementById('taha-combo');
+      const betulComboDiv = document.getElementById('betul-combo');
+      
+      tahaComboDiv.textContent = tahaCombo >= 2 ? '🔥 Combo x' + tahaCombo : '';
+      betulComboDiv.textContent = betulCombo >= 2 ? '🔥 Combo x' + betulCombo : '';
+    }
+
+    function resetLetters() {
+      document.getElementById('taha-letter').textContent = '?';
+      document.getElementById('betul-letter').textContent = '?';
+    }
+
+    function updateQuote() {
+      const quote = quotes[Math.floor(Math.random() * quotes.length)];
+      document.getElementById('love-quote').textContent = quote;
+    }
+
+    function restartGame() {
+      clearTimers();
+      if (gameTimeInterval) clearInterval(gameTimeInterval);
+      resetLetters();
+      document.getElementById('taha-box').classList.remove('active');
+      document.getElementById('betul-box').classList.remove('active');
+      initGame();
+    }
+
+    function endGame() {
+      clearTimers();
+      if (gameTimeInterval) clearInterval(gameTimeInterval);
+      isWaitingForNextTurn = true;
+      
+      document.getElementById('taha-box').classList.remove('active');
+      document.getElementById('betul-box').classList.remove('active');
+      document.getElementById('taha-button').disabled = true;
+      document.getElementById('betul-button').disabled = true;
+      
+      const finalTime = document.getElementById('game-time').textContent;
+      
+      let winner = '';
+      let winnerMessage = '';
+      if (tahaScore > betulScore) {
+        winner = '🏆 TAHA KAZANDI! 🏆';
+        winnerMessage = 'Taha muhteşem bir performans sergiledi!';
+      } else if (betulScore > tahaScore) {
+        winner = '🏆 BETÜL KAZANDI! 🏆';
+        winnerMessage = 'Betül harika bir oyun oynadı!';
+      } else {
+        winner = '💕 BERABERLİK! 💕';
+        winnerMessage = 'Aşk kazandı! İkiniz de harikaydınız!';
+      }
+      
+      updateGameStatus('Oyun bitti! ' + winner);
+      
+      setTimeout(() => {
+        alert(
+          winner + '\n\n' +
+          winnerMessage + '\n\n' +
+          '━━━━━━━━━━━━━━━━━━━━\n' +
+          '📊 SONUÇLAR:\n' +
+          '━━━━━━━━━━━━━━━━━━━━\n' +
+          '💙 Taha: ' + tahaScore + ' puan\n' +
+          '💗 Betül: ' + betulScore + ' puan\n' +
+          '⏱️ Oyun Süresi: ' + finalTime + '\n' +
+          '━━━━━━━━━━━━━━━━━━━━\n\n' +
+          'Yeni oyun için "Yeni Oyun" butonuna tıklayın! 🎮'
+        );
+      }, 500);
+    }
+  </script>
+</body>
+</html>
